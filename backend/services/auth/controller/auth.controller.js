@@ -2,6 +2,7 @@ import {getAuth} from "firebase-admin/auth"
 import User from "../models/user.model.js"
 import {app} from "../config/firebase.js"
 import { createConnection } from "mongoose"
+import redis from "../../../shared/redis/redis.js"
 
 export const login = async (req,res)=>{
     try {
@@ -23,6 +24,15 @@ export const login = async (req,res)=>{
 
         const sessionId = crypto.randomUUID()
 
+        // Storing session in redis
+        redis.set(`session-{sessionId}`,JSON.stringify({
+            userId : user._id,
+            name : user.name,
+            email : user.email,
+            avatar : user.avatar
+        }),"EX",7*24*60*60)
+
+        // Storing cookie in browser
         res.cookie("session",sessionId,{
             httpOnly:true,
             secure:false,
@@ -33,5 +43,15 @@ export const login = async (req,res)=>{
         return res.status(200).json(user)
     } catch (error) {
         return res.status(500).json({message:`login error ${error}`})
+    }
+}
+
+export const logout = async(req,res)=>{
+    try {
+        const sessionId = req.cookies?.session
+        await redis.del(`session-${sessionId}`)
+        res.clearCookie("session")
+    } catch (error) {
+        return res.status(500).json({message:`logout error ${error}`})
     }
 }
