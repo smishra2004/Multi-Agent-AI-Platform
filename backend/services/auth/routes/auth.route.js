@@ -1,9 +1,12 @@
 import express from "express"
-import { login, logout } from "../controller/auth.controller.js"
+import { deductCredits, login, logout, updateUserPayment } from "../controller/auth.controller.js"
 
 const router = express.Router()
 
 router.post("/login",login)
 router.get("/logout",logout)
+router.post("/update-plan",updateUserPayment)
+router.post("/deduct-credits",deductCredits)
+
 
 export default router
